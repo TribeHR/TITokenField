@@ -28,6 +28,7 @@
 	UIView * _contentView;
 	NSMutableArray * _resultsArray;
 	UIPopoverController * _popoverController;
+    BOOL _managesContentViewFrame;
 }
 @dynamic delegate;
 @synthesize showAlreadyTokenized = _showAlreadyTokenized;
@@ -66,6 +67,7 @@
 	_showAlreadyTokenized = NO;
     _searchSubtitles = YES;
     _scrollAllowed = YES;
+    _managesContentViewFrame = NO;
 	_resultsArray = [[NSMutableArray alloc] init];
 	
 	_tokenField = [[TITokenField alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.width, 42)];
@@ -124,28 +126,45 @@
 }
 
 #pragma mark Property Overrides
+
+- (BOOL)managesContentViewFrame {
+    return _managesContentViewFrame;
+}
+
+// Setting this property to YES forces the content view to always fully fit inside
+// the TITokenFieldView's frame instead of allowing it to extend past the edges,
+// in which case the user would have to scroll to be able to see it. This enables
+// the use case where the entire contents of the TITokenFieldView do not scroll;
+// then a scrollable view can be placed inside the contentView. This, in conjunction
+// with setting scrollEnabled to NO on the TITokenFieldView, allow us to build a UI
+// where the TITokenField is pinned to the top of the screen while the contents of
+// the contentView are scrollable.
+- (void)setManagesContentViewFrame:(BOOL)managesContentViewFrame {
+    _managesContentViewFrame = managesContentViewFrame;
+    if (managesContentViewFrame) {
+        [self setNeedsLayout];
+    }
+}
+
 - (void)setFrame:(CGRect)frame {
 	
 	[super setFrame:frame];
-	
-	CGFloat width = frame.size.width;
-	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
-	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
-	[_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
-	[_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
 	
 	if (_popoverController.popoverVisible){
 		[_popoverController dismissPopoverAnimated:NO];
 		[self presentpopoverAtTokenFieldCaretAnimated:NO];
 	}
+    
+    if (!_managesContentViewFrame) {
+        [self calculateViewFrames];
+    }
 	
-	[self updateContentSize];
-	[self layoutSubviews];
+	[self setNeedsLayout];
 }
 
 - (void)setContentOffset:(CGPoint)offset {
 	[super setContentOffset:offset];
-	[self layoutSubviews];
+	[self setNeedsLayout];
 }
 
 - (NSArray *)tokenTitles {
@@ -172,9 +191,24 @@
 }
 
 #pragma mark Event Handling
+
+- (void)calculateViewFrames {
+    CGFloat width = self.frame.size.width;
+	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
+	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
+    [_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
+    [_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (self.frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
+}
+
 - (void)layoutSubviews {
 	
 	[super layoutSubviews];
+    
+    if (_managesContentViewFrame) {
+        [self calculateViewFrames];
+    }
+    
+	[self updateContentSize];
 	
 	CGFloat relativeFieldHeight = CGRectGetMaxY(_tokenField.frame) - self.contentOffset.y;
 	CGFloat newHeight = self.bounds.size.height - relativeFieldHeight;
