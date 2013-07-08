@@ -128,18 +128,11 @@
 	
 	[super setFrame:frame];
 	
-	CGFloat width = frame.size.width;
-	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
-	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
-	[_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
-	[_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
-	
 	if (_popoverController.popoverVisible){
 		[_popoverController dismissPopoverAnimated:NO];
 		[self presentpopoverAtTokenFieldCaretAnimated:NO];
 	}
 	
-	[self updateContentSize];
 	[self layoutSubviews];
 }
 
@@ -175,6 +168,14 @@
 - (void)layoutSubviews {
 	
 	[super layoutSubviews];
+    
+    CGFloat width = self.frame.size.width;
+	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
+	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
+    [_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (self.frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
+    [_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
+    
+	[self updateContentSize];
 	
 	CGFloat relativeFieldHeight = CGRectGetMaxY(_tokenField.frame) - self.contentOffset.y;
 	CGFloat newHeight = self.bounds.size.height - relativeFieldHeight;
