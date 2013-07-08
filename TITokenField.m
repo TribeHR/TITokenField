@@ -172,8 +172,8 @@
     CGFloat width = self.frame.size.width;
 	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
 	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
-    [_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (self.frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
     [_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
+    [_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (self.frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
     
 	[self updateContentSize];
 	
