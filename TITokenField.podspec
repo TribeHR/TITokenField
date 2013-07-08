@@ -21,7 +21,7 @@ THIS SOFTWARE IS PROVIDED BY TOM IRVING "AS IS" AND ANY EXPRESS OR IMPLIED WARRA
   }
 
   s.author       = { "Tom Irving" => "info@thermoglobalnuclearwar.com" }
-  s.source       = { :git => "https://github.com/thermogl/TITokenField.git", :tag => "0.9.0" }
+  s.source       = { :git => "https://github.com/TribeHR/TITokenField.git", :tag => "0.9.0" }
   s.platform     = :ios
   s.source_files = 'Classes', '*.{h,m}'
 end
