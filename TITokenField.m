@@ -38,6 +38,7 @@
 @synthesize contentView = _contentView;
 @synthesize separator = _separator;
 @synthesize sourceArray = _sourceArray;
+@synthesize resultsArray = _resultsArray;
 
 #pragma mark Init
 - (id)initWithFrame:(CGRect)frame {
