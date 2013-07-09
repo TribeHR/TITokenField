@@ -64,6 +64,7 @@
 @property (nonatomic, readonly) UIView * contentView;
 @property (nonatomic, copy) NSArray * sourceArray;
 @property (nonatomic, readonly) NSArray * tokenTitles;
+@property (nonatomic, readonly) NSArray * resultsArray;
 
 - (void)updateContentSize;
 
