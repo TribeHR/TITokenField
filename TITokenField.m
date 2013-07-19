@@ -44,6 +44,7 @@
 @synthesize separator = _separator;
 @synthesize sourceArray = _sourceArray;
 @synthesize resultsArray = _resultsArray;
+@synthesize searchCompareOptions = _searchCompareOptions;
 
 #pragma mark Init
 - (id)initWithFrame:(CGRect)frame {
@@ -76,6 +77,7 @@
     _managesContentViewFrame = NO;
     _forcePickSearchResult = NO;
 	_resultsArray = [NSMutableArray array];
+    _searchCompareOptions = NSCaseInsensitiveSearch;
 	
 	_tokenField = [[TITokenField alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.width, 42)];
 	[_tokenField addTarget:self action:@selector(tokenFieldDidBeginEditing:) forControlEvents:UIControlEventEditingDidBegin];
@@ -386,8 +388,8 @@
 			NSString * querySubtitle = [self searchResultSubtitleForRepresentedObject:sourceObject];
 			if (!querySubtitle || !_searchSubtitles) querySubtitle = @"";
 			
-			if ([query rangeOfString:searchString options:NSCaseInsensitiveSearch].location != NSNotFound ||
-				[querySubtitle rangeOfString:searchString options:NSCaseInsensitiveSearch].location != NSNotFound ||
+			if ([query rangeOfString:searchString options:self.searchCompareOptions].location != NSNotFound ||
+				[querySubtitle rangeOfString:searchString options:self.searchCompareOptions].location != NSNotFound ||
                 (_forcePickSearchResult && searchString.length == 0)){
 				
 				__block BOOL shouldAdd = ![_resultsArray containsObject:sourceObject];
