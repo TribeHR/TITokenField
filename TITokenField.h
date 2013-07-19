@@ -65,6 +65,7 @@
 @property (nonatomic, copy) NSArray * sourceArray;
 @property (nonatomic, readonly) NSArray * tokenTitles;
 @property (nonatomic, readonly) NSArray * resultsArray;
+@property (nonatomic) NSStringCompareOptions searchCompareOptions;
 
 - (void)updateContentSize;
 
