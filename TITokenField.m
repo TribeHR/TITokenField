@@ -981,8 +981,6 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 #pragma mark - TIToken -
 //==========================================================
 
-CGFloat const hTextPadding = 14;
-CGFloat const vTextPadding = 8;
 CGFloat const kDisclosureThickness = 2.5;
 UILineBreakMode const kLineBreakMode = UILineBreakModeTailTruncation;
 
@@ -1001,6 +999,7 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 @synthesize highlightedTextColor = _highlightedTextColor;
 @synthesize accessoryType = _accessoryType;
 @synthesize maxWidth = _maxWidth;
+@synthesize contentEdgeInsets = _contentEdgeInsets;
 
 #pragma mark Init
 - (id)initWithTitle:(NSString *)aTitle {
@@ -1025,6 +1024,8 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 		
 		_accessoryType = TITokenAccessoryTypeNone;
 		_maxWidth = 200;
+        
+        _contentEdgeInsets = UIEdgeInsetsMake(4, 10, 4, 10);
 		
 		[self setBackgroundColor:[UIColor clearColor]];
 		[self sizeToFit];
@@ -1115,13 +1116,13 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 	
 	if (_accessoryType == TITokenAccessoryTypeDisclosureIndicator){
 		CGPathRelease(CGPathCreateDisclosureIndicatorPath(CGPointZero, _font.pointSize, kDisclosureThickness, &accessoryWidth));
-		accessoryWidth += floorf(hTextPadding / 2);
+		accessoryWidth += floorf(_contentEdgeInsets.right / 2);
 	}
 	
-	CGSize titleSize = [_title sizeWithFont:_font forWidth:(_maxWidth - hTextPadding - accessoryWidth) lineBreakMode:kLineBreakMode];
-	CGFloat height = floorf(titleSize.height + vTextPadding);
+	CGSize titleSize = [_title sizeWithFont:_font forWidth:(_maxWidth - _contentEdgeInsets.left - _contentEdgeInsets.right - accessoryWidth) lineBreakMode:kLineBreakMode];
+	CGFloat height = floorf(titleSize.height + _contentEdgeInsets.top + _contentEdgeInsets.bottom);
 	
-	[self setFrame:((CGRect){self.frame.origin, {MAX(floorf(titleSize.width + hTextPadding + accessoryWidth), height - 3), height}})];
+	[self setFrame:((CGRect){self.frame.origin, {MAX(floorf(titleSize.width + _contentEdgeInsets.left + _contentEdgeInsets.right + accessoryWidth), height - 3), height}})];
 	[self setNeedsDisplay];
 }
 
@@ -1189,9 +1190,9 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 	CGFloat accessoryWidth = 0;
 	
 	if (_accessoryType == TITokenAccessoryTypeDisclosureIndicator){
-		CGPoint arrowPoint = CGPointMake(self.bounds.size.width - floorf(hTextPadding / 2), (self.bounds.size.height / 2) - 1);
+		CGPoint arrowPoint = CGPointMake(self.bounds.size.width - floorf(_contentEdgeInsets.right), (self.bounds.size.height / 2) - 1);
 		CGPathRef disclosurePath = CGPathCreateDisclosureIndicatorPath(arrowPoint, _font.pointSize, kDisclosureThickness, &accessoryWidth);
-		accessoryWidth += floorf(hTextPadding / 2);
+		accessoryWidth += floorf(_contentEdgeInsets.right);
 		
 		CGContextAddPath(context, disclosurePath);
 		CGContextSetFillColor(context, (CGFloat[4]){1, 1, 1, 1});
@@ -1228,10 +1229,9 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 	
 	CGColorSpaceRelease(colorspace);
 	
-	CGSize titleSize = [_title sizeWithFont:_font forWidth:(_maxWidth - hTextPadding - accessoryWidth) lineBreakMode:kLineBreakMode];
-	CGFloat vPadding = floor((self.bounds.size.height - titleSize.height) / 2);
-	CGFloat titleWidth = ceilf(self.bounds.size.width - hTextPadding - accessoryWidth);
-	CGRect textBounds = CGRectMake(floorf(hTextPadding / 2), vPadding - 1, titleWidth, floorf(self.bounds.size.height - (vPadding * 2)));
+	CGSize titleSize = [_title sizeWithFont:_font forWidth:(_maxWidth - _contentEdgeInsets.left - _contentEdgeInsets.right - accessoryWidth) lineBreakMode:kLineBreakMode];
+	CGFloat titleWidth = ceilf(self.bounds.size.width - _contentEdgeInsets.left - _contentEdgeInsets.right - accessoryWidth);
+	CGRect textBounds = CGRectMake(floorf(_contentEdgeInsets.left), _contentEdgeInsets.top, titleWidth, floorf(self.bounds.size.height - _contentEdgeInsets.top - _contentEdgeInsets.bottom));
 	
 	CGContextSetFillColorWithColor(context, (drawHighlighted ? _highlightedTextColor : _textColor).CGColor);
 	[_title drawInRect:textBounds withFont:_font lineBreakMode:kLineBreakMode];
