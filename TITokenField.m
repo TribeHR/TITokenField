@@ -369,6 +369,11 @@
 	[_resultsTable reloadData];
 	
 	searchString = [searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	//TRIBEHR: The line below corrects the following bug: Employee Names Missing in Give Kudos https://www.pivotaltracker.com/story/show/53980813
+	// We didn't fully understand what the issue was. The same search string would be passed through here twice in separate occasions separated by
+	// a visit to another screen - the View Kudos page, more specifically - but while in the first pass the line above would trim it of extraneous characters
+	// (namely the Zero Width Space character, \u200B), in the second pass this wouldn't happen.
+	searchString = [searchString stringByReplacingOccurrencesOfString:@"\u200B" withString:@""];
 	
 	if (searchString.length){
 		[_sourceArray enumerateObjectsUsingBlock:^(id sourceObject, NSUInteger idx, BOOL *stop){
