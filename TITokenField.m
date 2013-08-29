@@ -828,17 +828,20 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 		//Hide / show the shadow
 		[self.layer setMasksToBounds:!flag];
 		
+        UIEdgeInsets contentInsets = UIEdgeInsetsMake(0, 0, 0, 0);
+        
 		UIScrollView * scrollView = self.scrollView;
         if ([scrollView isKindOfClass:TITokenFieldView.class]) {
             TITokenFieldView* container = (TITokenFieldView*)scrollView;
             [container setScrollEnabledIfAllowed:!flag];
+            contentInsets = container.contentInset;
         } else {
             [scrollView setScrollsToTop:!flag];
             [scrollView setScrollEnabled:!flag];
         }
 		
 		CGFloat offset = ((_numberOfLines == 1 || !flag) ? 0 : _tokenCaret.y - floor(self.font.lineHeight * 4 / 7) + 1);
-		[scrollView setContentOffset:CGPointMake(0, self.frame.origin.y + offset) animated:animated];
+		[scrollView setContentOffset:CGPointMake(0, self.frame.origin.y + offset - contentInsets.top) animated:animated];
 	}
 	
 	_resultsModeEnabled = flag;
