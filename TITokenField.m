@@ -774,7 +774,7 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 	CGFloat leftMargin = self.leftViewWidth + 12;
 	CGFloat hPadding = 8;
 	CGFloat rightMargin = self.rightViewWidth + hPadding;
-	CGFloat lineHeight = self.font.lineHeight + topMargin + 5;
+	CGFloat lineHeight = ceil(self.font.lineHeight + topMargin + 5);
 	
 	_numberOfLines = 1;
 	_tokenCaret = (CGPoint){leftMargin, (topMargin - 1)};
@@ -930,8 +930,8 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 }
 
 - (CGRect)rightViewRectForBounds:(CGRect)bounds {
-	return ((CGRect){{bounds.size.width - self.rightView.bounds.size.width - 6,
-		bounds.size.height - self.rightView.bounds.size.height - 6}, self.rightView.bounds.size});
+	return ((CGRect){{floor(bounds.size.width - self.rightView.bounds.size.width - 6),
+		floor(bounds.size.height - self.rightView.bounds.size.height - 6)}, self.rightView.bounds.size});
 }
 
 - (CGFloat)leftViewWidth {
