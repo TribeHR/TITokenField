@@ -9,8 +9,23 @@
 #import "TITokenField.h"
 #import <QuartzCore/QuartzCore.h>
 
+
+BOOL isIOS7OrGreater() {
+    static dispatch_once_t once;
+    static BOOL isIOS7;
+    dispatch_once(&once, ^ {
+        NSString* majorVersion = [[[UIDevice currentDevice] systemVersion] componentsSeparatedByString:@"."][0];
+        isIOS7 = [majorVersion integerValue] >= 7;
+    });
+    return isIOS7;
+}
+
+
 @interface TITokenField ()
 @property (nonatomic, assign) BOOL forcePickSearchResult;
+@end
+
+@interface TIFlatToken : TIToken
 @end
 
 //==========================================================
@@ -224,7 +239,13 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	
 	id representedObject = [_resultsArray objectAtIndex:indexPath.row];
-    TIToken * token = [[TIToken alloc] initWithTitle:[self displayStringForRepresentedObject:representedObject] representedObject:representedObject];
+    TIToken * token;
+    
+    if (self.tokenField.useFlatStyle) {
+        token = [[TIFlatToken alloc] initWithTitle:[self displayStringForRepresentedObject:representedObject] representedObject:representedObject];
+    } else {
+        token = [[TIToken alloc] initWithTitle:[self displayStringForRepresentedObject:representedObject] representedObject:representedObject];
+    }
     [_tokenField addToken:token];
 	
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
@@ -434,7 +455,8 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 }
 
 - (void)setup {
-	
+	self.useFlatStyle = isIOS7OrGreater();
+    
 	[self setBorderStyle:UITextBorderStyleNone];
 	[self setFont:[UIFont systemFontOfSize:14]];
 	[self setBackgroundColor:[UIColor whiteColor]];
@@ -591,7 +613,12 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 - (TIToken *)addTokenWithTitle:(NSString *)title representedObject:(id)object {
 	
 	if (title.length){
-		TIToken * token = [[TIToken alloc] initWithTitle:title representedObject:object font:self.font];
+        TIToken* token;
+        if (self.useFlatStyle) {
+            token = [[TIFlatToken alloc] initWithTitle:title representedObject:object font:self.font];
+        } else {
+            token = [[TIToken alloc] initWithTitle:title representedObject:object font:self.font];
+        }
 		[self addToken:token];
 		return token;
 	}
@@ -1307,6 +1334,14 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 - (NSString *)description {
 	return [NSString stringWithFormat:@"<TIToken %p; title = \"%@\"; representedObject = \"%@\">", self, _title, _representedObject];
 }
+
+
+@end
+
+#pragma mark - iOS 7 Style Token
+
+@implementation TIFlatToken
+
 
 
 @end
