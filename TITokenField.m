@@ -739,8 +739,8 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 	CGFloat hPadding = 8;
 	CGFloat rightMargin = self.rightViewWidth + hPadding;
 	CGFloat lineHeight = self.font.lineHeight + topMargin + 5;
-	
-	_numberOfLines = 1;
+
+    _numberOfLines = 1;
 	_tokenCaret = (CGPoint){leftMargin, (topMargin - 1)};
 	
 	[_tokens enumerateObjectsUsingBlock:^(TIToken * token, NSUInteger idx, BOOL *stop){
@@ -1346,7 +1346,7 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 	if (self) {
         self.hTextPadding = 6;
         self.vTextPadding = 8;
-        self.kDisclosureThickness = 1;
+        self.kDisclosureThickness = 1.5;
         
 		self.textColor = self.tintColor;
         
@@ -1389,7 +1389,7 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
 	
 	if (self.accessoryType == TITokenAccessoryTypeDisclosureIndicator){
 		CGPoint arrowPoint = CGPointMake(self.bounds.size.width - floorf(self.hTextPadding / 2), (self.bounds.size.height / 2) - 1);
-		CGPathRef disclosurePath = CGPathCreateDisclosureIndicatorPath(arrowPoint, self.font.pointSize, self.kDisclosureThickness, &accessoryWidth);
+		CGPathRef disclosurePath = CGPathCreateDisclosureIndicatorPath(arrowPoint, self.font.pointSize * 0.9, self.kDisclosureThickness, &accessoryWidth);
 		accessoryWidth += floorf(self.hTextPadding / 2);
 		
 		CGContextAddPath(context, disclosurePath);
@@ -1397,7 +1397,7 @@ CGPathRef CGPathCreateDisclosureIndicatorPath(CGPoint arrowPointFront, CGFloat h
         if (drawHighlighted) {
             CGContextSetFillColor(context, (CGFloat[4]){1, 1, 1, 1});
         } else {
-            CGContextSetFillColor(context, (CGFloat[4]){red, green, blue, 1});
+            CGContextSetFillColor(context, (CGFloat[4]){0xCB / 256.0, 0xCB / 256.0, 0xCB / 256.0, 1});
         }
         
         CGContextFillPath(context);
