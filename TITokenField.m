@@ -39,12 +39,15 @@ BOOL isIOS7OrGreater() {
 - (void)setSearchResultsVisible:(BOOL)visible;
 - (void)resultsForSearchString:(NSString *)searchString;
 - (void)presentpopoverAtTokenFieldCaretAnimated:(BOOL)animated;
+- (void)setScrollEnabledIfAllowed:(BOOL)enableScrolling;
 @end
 
 @implementation TITokenFieldView {
+    BOOL _scrollAllowed;
 	UIView * _contentView;
 	NSMutableArray * _resultsArray;
 	UIPopoverController * _popoverController;
+    BOOL _managesContentViewFrame;
 }
 @dynamic delegate;
 @synthesize showAlreadyTokenized = _showAlreadyTokenized;
@@ -55,6 +58,8 @@ BOOL isIOS7OrGreater() {
 @synthesize contentView = _contentView;
 @synthesize separator = _separator;
 @synthesize sourceArray = _sourceArray;
+@synthesize resultsArray = _resultsArray;
+@synthesize searchCompareOptions = _searchCompareOptions;
 
 #pragma mark Init
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -83,8 +88,10 @@ BOOL isIOS7OrGreater() {
 	
 	_showAlreadyTokenized = NO;
     _searchSubtitles = YES;
-    _forcePickSearchResult = NO;
+    _scrollAllowed = YES;
+    _managesContentViewFrame = NO;
 	_resultsArray = [NSMutableArray array];
+    _searchCompareOptions = NSCaseInsensitiveSearch;
 	
 	_tokenField = [[TITokenField alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.width, 42)];
 	[_tokenField addTarget:self action:@selector(tokenFieldDidBeginEditing:) forControlEvents:UIControlEventEditingDidBegin];
@@ -137,22 +144,39 @@ BOOL isIOS7OrGreater() {
 }
 
 #pragma mark Property Overrides
+
+- (BOOL)managesContentViewFrame {
+    return _managesContentViewFrame;
+}
+
+// Setting this property to YES forces the content view to always fully fit inside
+// the TITokenFieldView's frame instead of allowing it to extend past the edges,
+// in which case the user would have to scroll to be able to see it. This enables
+// the use case where the entire contents of the TITokenFieldView do not scroll;
+// then a scrollable view can be placed inside the contentView. This, in conjunction
+// with setting scrollEnabled to NO on the TITokenFieldView, allow us to build a UI
+// where the TITokenField is pinned to the top of the screen while the contents of
+// the contentView are scrollable.
+- (void)setManagesContentViewFrame:(BOOL)managesContentViewFrame {
+    _managesContentViewFrame = managesContentViewFrame;
+    if (managesContentViewFrame) {
+        [self setNeedsLayout];
+    }
+}
+
 - (void)setFrame:(CGRect)frame {
 	
 	[super setFrame:frame];
-	
-	CGFloat width = frame.size.width;
-	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
-	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
-	[_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (frame.size.height - CGRectGetMaxY(_tokenField.frame))}})];
-	[_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
 	
 	if (_popoverController.popoverVisible){
 		[_popoverController dismissPopoverAnimated:NO];
 		[self presentpopoverAtTokenFieldCaretAnimated:NO];
 	}
+    
+    if (!_managesContentViewFrame) {
+        [self calculateViewFrames];
+    }
 	
-	[self updateContentSize];
 	[self setNeedsLayout];
 }
 
@@ -165,6 +189,25 @@ BOOL isIOS7OrGreater() {
 	return _tokenField.tokenTitles;
 }
 
+// Hide the fact that we internally enable and disable scrolling depending on
+// whether the results table is showing. This value should mean, "whether the view
+// scrolls in general," not "the view is currently physically scrollable."
+- (void)setScrollEnabled:(BOOL)scrollEnabled {
+    _scrollAllowed = scrollEnabled;
+    [super setScrollEnabled:scrollEnabled];
+}
+
+- (BOOL)isScrollEnabled {
+    return _scrollAllowed;
+}
+
+// We use this internally to set the actual scrolling behaviour - we disable
+// scrolling when the results table is visible, and enable scrolling if it's
+// not visible *and scrolling is allowed* (as set by setScrollEnabled: above).
+- (void)setScrollEnabledIfAllowed:(BOOL)enableScrolling {
+    [super setScrollEnabled:_scrollAllowed && enableScrolling];
+}
+
 - (void)setForcePickSearchResult:(BOOL)forcePickSearchResult
 {
     _tokenField.forcePickSearchResult = forcePickSearchResult;
@@ -172,9 +215,24 @@ BOOL isIOS7OrGreater() {
 }
 
 #pragma mark Event Handling
+
+- (void)calculateViewFrames {
+    CGFloat width = self.frame.size.width;
+	[_separator setFrame:((CGRect){_separator.frame.origin, {width, _separator.bounds.size.height}})];
+	[_resultsTable setFrame:((CGRect){_resultsTable.frame.origin, {width, _resultsTable.bounds.size.height}})];
+    [_tokenField setFrame:((CGRect){_tokenField.frame.origin, {width, _tokenField.bounds.size.height}})];
+    [_contentView setFrame:((CGRect){_contentView.frame.origin, {width, (self.frame.size.height - CGRectGetMaxY(_tokenField.frame) - self.contentInset.top)}})];
+}
+
 - (void)layoutSubviews {
 	
 	[super layoutSubviews];
+    
+    if (_managesContentViewFrame) {
+        [self calculateViewFrames];
+    }
+    
+	[self updateContentSize];
 	
 	CGFloat relativeFieldHeight = CGRectGetMaxY(_tokenField.frame) - self.contentOffset.y;
 	CGFloat newHeight = self.bounds.size.height - relativeFieldHeight;
@@ -342,6 +400,11 @@ BOOL isIOS7OrGreater() {
 	[_resultsTable reloadData];
 	
 	searchString = [searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	//TRIBEHR: The line below corrects the following bug: Employee Names Missing in Give Kudos https://www.pivotaltracker.com/story/show/53980813
+	// We didn't fully understand what the issue was. The same search string would be passed through here twice in separate occasions separated by
+	// a visit to another screen - the View Kudos page, more specifically - but while in the first pass the line above would trim it of extraneous characters
+	// (namely the Zero Width Space character, \u200B), in the second pass this wouldn't happen.
+	searchString = [searchString stringByReplacingOccurrencesOfString:@"\u200B" withString:@""];
 	
 	if (searchString.length || _forcePickSearchResult){
 		[_sourceArray enumerateObjectsUsingBlock:^(id sourceObject, NSUInteger idx, BOOL *stop){
@@ -350,8 +413,8 @@ BOOL isIOS7OrGreater() {
 			NSString * querySubtitle = [self searchResultSubtitleForRepresentedObject:sourceObject];
 			if (!querySubtitle || !_searchSubtitles) querySubtitle = @"";
 			
-			if ([query rangeOfString:searchString options:NSCaseInsensitiveSearch].location != NSNotFound ||
-				[querySubtitle rangeOfString:searchString options:NSCaseInsensitiveSearch].location != NSNotFound ||
+			if ([query rangeOfString:searchString options:self.searchCompareOptions].location != NSNotFound ||
+				[querySubtitle rangeOfString:searchString options:self.searchCompareOptions].location != NSNotFound ||
                 (_forcePickSearchResult && searchString.length == 0)){
 				
 				__block BOOL shouldAdd = ![_resultsArray containsObject:sourceObject];
@@ -738,7 +801,7 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 	CGFloat leftMargin = self.leftViewWidth + 12;
 	CGFloat hPadding = 8;
 	CGFloat rightMargin = self.rightViewWidth + hPadding;
-	CGFloat lineHeight = self.font.lineHeight + topMargin + 5;
+	CGFloat lineHeight = ceil(self.font.lineHeight + topMargin + 5);
 
     _numberOfLines = 1;
 	_tokenCaret = (CGPoint){leftMargin, (topMargin - 1)};
@@ -800,12 +863,20 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 		//Hide / show the shadow
 		[self.layer setMasksToBounds:!flag];
 		
+        UIEdgeInsets contentInsets = UIEdgeInsetsMake(0, 0, 0, 0);
+        
 		UIScrollView * scrollView = self.scrollView;
-		[scrollView setScrollsToTop:!flag];
-		[scrollView setScrollEnabled:!flag];
+        if ([scrollView isKindOfClass:TITokenFieldView.class]) {
+            TITokenFieldView* container = (TITokenFieldView*)scrollView;
+            [container setScrollEnabledIfAllowed:!flag];
+            contentInsets = container.contentInset;
+        } else {
+            [scrollView setScrollsToTop:!flag];
+            [scrollView setScrollEnabled:!flag];
+        }
 		
 		CGFloat offset = ((_numberOfLines == 1 || !flag) ? 0 : _tokenCaret.y - floor(self.font.lineHeight * 4 / 7) + 1);
-		[scrollView setContentOffset:CGPointMake(0, self.frame.origin.y + offset) animated:animated];
+		[scrollView setContentOffset:CGPointMake(0, self.frame.origin.y + offset - contentInsets.top) animated:animated];
 	}
 	
 	_resultsModeEnabled = flag;
@@ -886,8 +957,8 @@ NSString * const kTextHidden = @"\u200D"; // Zero-Width Joiner
 }
 
 - (CGRect)rightViewRectForBounds:(CGRect)bounds {
-	return ((CGRect){{bounds.size.width - self.rightView.bounds.size.width - 6,
-		bounds.size.height - self.rightView.bounds.size.height - 6}, self.rightView.bounds.size});
+	return ((CGRect){{floor(bounds.size.width - self.rightView.bounds.size.width - 6),
+		floor(bounds.size.height - self.rightView.bounds.size.height - 6)}, self.rightView.bounds.size});
 }
 
 - (CGFloat)leftViewWidth {
