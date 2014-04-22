@@ -243,18 +243,6 @@ BOOL isIOS7OrGreater() {
 	[self setContentSize:CGSizeMake(self.bounds.size.width, CGRectGetMaxY(_contentView.frame) + 1)];
 }
 
-- (BOOL)canBecomeFirstResponder {
-	return YES;
-}
-
-- (BOOL)becomeFirstResponder {
-	return [_tokenField becomeFirstResponder];
-}
-
-- (BOOL)resignFirstResponder {
-	return [_tokenField resignFirstResponder];
-}
-
 #pragma mark TableView Methods
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
 	
